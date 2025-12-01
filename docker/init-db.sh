@@ -9,7 +9,8 @@ echo "===================================="
 
 # Ожидание готовности PostgreSQL
 echo "Ожидание готовности PostgreSQL..."
-until pg_isready -h postgres -U ${POSTGRES_USER:-store_user} -d ${POSTGRES_DB:-electronics_store}; do
+# Подключаемся проверкой готовности от имени суперпользователя postgres
+until pg_isready -h postgres -U postgres -d postgres; do
   echo "PostgreSQL еще не готов - ожидание..."
   sleep 2
 done
@@ -19,7 +20,9 @@ echo ""
 
 # Проверка существования базы данных
 echo "Проверка базы данных..."
-DB_EXISTS=$(PGPASSWORD=${POSTGRES_PASSWORD:-store_password} psql -h postgres -U ${POSTGRES_USER:-store_user} -d ${POSTGRES_DB:-electronics_store} -tAc "SELECT 1 FROM pg_tables WHERE tablename='users' LIMIT 1;" 2>/dev/null)
+# Для инициализации всегда используем суперпользователя postgres,
+# пароль берётся из POSTGRES_PASSWORD, как в официальном образе
+DB_EXISTS=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -tAc "SELECT 1 FROM pg_tables WHERE tablename='users' LIMIT 1;" 2>/dev/null)
 
 if [ "$DB_EXISTS" = "1" ]; then
     echo "⚠️  База данных уже инициализирована!"
@@ -35,7 +38,7 @@ fi
 
 # Выполнение SQL скрипта
 echo "Выполнение SQL скрипта..."
-if PGPASSWORD=${POSTGRES_PASSWORD:-store_password} psql -h postgres -U ${POSTGRES_USER:-store_user} -d ${POSTGRES_DB:-electronics_store} -f /database.sql; then
+if PGPASSWORD="${POSTGRES_PASSWORD}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -f /database.sql; then
     echo ""
     echo "✅ База данных успешно инициализирована!"
     echo ""

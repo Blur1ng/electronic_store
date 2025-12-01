@@ -28,7 +28,8 @@ class Order {
             // Создаем заказ
             $stmt = $this->pdo->prepare("INSERT INTO orders (user_id, total_amount, shipping_address, notes) VALUES (?, ?, ?, ?)");
             $stmt->execute([$userId, $totalAmount, $shippingAddress, $notes]);
-            $orderId = $this->pdo->lastInsertId();
+            // Для PostgreSQL нужно явно указывать имя последовательности
+            $orderId = $this->pdo->lastInsertId('orders_id_seq');
             
             // Добавляем товары в заказ
             foreach ($cartItems as $item) {
