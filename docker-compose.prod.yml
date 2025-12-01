@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: electronics_postgres_prod
+    restart: always 
+    
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    
+    # Открываем порт PostgreSQL на localhost для bare metal nginx
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5499}:5432"
+    
+    networks:
+      - electronics_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s      
+      timeout: 10s    
+      retries: 3       
+      start_period: 40s  
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: electronics_php_prod
+    restart: always
+    
+    environment:
+      DB_HOST: postgres
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_PORT: 5432
+      SITE_URL: ${SITE_URL}
+      SITE_NAME: ${SITE_NAME}
+   
+      PHP_DISPLAY_ERRORS: "Off"   
+      PHP_ERROR_REPORTING: "E_ALL"    
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      PHP_UPLOAD_MAX_FILESIZE: ${PHP_UPLOAD_MAX_FILESIZE:-20M}
+    
+    # Открываем порт PHP-FPM на localhost для bare metal nginx
+    ports:
+      - "127.0.0.1:9000:9000"
+    
+    volumes:
+      - .:/var/www/html:ro
+    
+    networks:
+      - electronics_network
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: electronics_pgadmin_prod
+    restart: always
+    
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'True' 
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True' 
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
+      PGADMIN_CONFIG_SESSION_COOKIE_NAME: 'pgadmin4_session'
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: '30'
+    
+    # Открываем порт pgAdmin на localhost для bare metal nginx
+    ports:
+      - "127.0.0.1:5050:80"
+    
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin-servers.json:/pgadmin4/servers.json:ro
+      - ./logs/pgadmin:/var/log/pgadmin
+    
+    networks:
+      - electronics_network
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  init-db:
+    image: postgres:15-alpine
+    container_name: electronics_init_db_prod
+    
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    
+    volumes:
+      - ./docker/init-db.sh:/init-db.sh:ro
+      - ./database.sql:/database.sql:ro
+    
+    command: sh /init-db.sh
+    
+    networks:
+      - electronics_network
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    profiles:
+      - init
+
+
+networks:
+  electronics_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  
+  pgadmin_data:
+    driver: local
+

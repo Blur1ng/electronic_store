@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Electronics Store PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "electronics_store",
+      "Username": "store_user",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}
+

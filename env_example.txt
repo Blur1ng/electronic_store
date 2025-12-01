@@ -1,0 +1,16 @@
+# Пример файла .env для Slack Duty Bot
+# Скопируйте этот файл в .env и заполните реальными значениями
+
+# Токен бота (находится в OAuth & Permissions -> Bot User OAuth Token)
+SLACK_BOT_TOKEN=xoxb-your-bot-token-here
+
+# Токен приложения (находится в Basic Information -> App-Level Tokens)
+SLACK_APP_TOKEN=xapp-your-app-token-here
+
+# Опционально: путь к команде msched (если не в PATH)
+# MSCHED_COMMAND=/usr/local/bin/msched today --json
+
+# Опционально: API ключ для Unsplash (для картинок)
+# UNSPLASH_API_KEY=your-unsplash-api-key
+
+

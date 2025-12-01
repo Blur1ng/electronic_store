@@ -1,0 +1,21 @@
+# Environment файлы
+.env
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
