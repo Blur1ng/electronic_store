@@ -20,9 +20,10 @@ echo ""
 
 # Проверка существования базы данных
 echo "Проверка базы данных..."
-# Для инициализации всегда используем суперпользователя postgres,
-# пароль берётся из POSTGRES_PASSWORD, как в официальном образе
-DB_EXISTS=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -tAc "SELECT 1 FROM pg_tables WHERE tablename='users' LIMIT 1;" 2>/dev/null)
+# Для инициализации всегда используем суперпользователя postgres.
+# По умолчанию используем пароль "password" (учебный режим),
+# но если POSTGRES_PASSWORD задан в окружении - берём его.
+DB_EXISTS=$(PGPASSWORD="${POSTGRES_PASSWORD:-password}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -tAc "SELECT 1 FROM pg_tables WHERE tablename='users' LIMIT 1;" 2>/dev/null)
 
 if [ "$DB_EXISTS" = "1" ]; then
     echo "⚠️  База данных уже инициализирована!"
@@ -38,7 +39,7 @@ fi
 
 # Выполнение SQL скрипта
 echo "Выполнение SQL скрипта..."
-if PGPASSWORD="${POSTGRES_PASSWORD}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -f /database.sql; then
+if PGPASSWORD="${POSTGRES_PASSWORD:-password}" psql -h postgres -U postgres -d "${POSTGRES_DB:-electronics_store}" -f /database.sql; then
     echo ""
     echo "✅ База данных успешно инициализирована!"
     echo ""
